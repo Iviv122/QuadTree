@@ -4,7 +4,24 @@ import p5 from "p5";
 const clientWidth = document.documentElement.clientWidth;
 const clientHeight = document.documentElement.clientHeight;
 
-class Node {}
+class Unit {
+  pos;
+  dir;
+  r;
+  v;
+
+  constructor(p, x, y, r = 50, v = 10) {
+    this.r = r;
+    this.v = v;
+    this.pos = p.createVector(x, y);
+    this.dir = p.createVector(Math.random(), Math.random()).normalize();
+  }
+  move(p) {
+    this.pos.add(this.dir.mult(this.v));
+    p.fill(255, 0, 0);
+    p.circle(this.pos.x, this.pos.y, this.r);
+  }
+}
 
 // rectangle shape :(
 class Quad {
@@ -55,44 +72,49 @@ class Quad {
   // ig split on of
   /** @param {p5} p */
   split(p) {
-    const halfx = this.pos.x / 2;
-    const halfy = this.pos.y / 2;
-
     const halfwidth = this.width / 2;
     const halfheight = this.height / 2;
 
     this.lb = new Quad(
       p,
-      this.pos.x - halfx,
-      this.pos.y - halfy,
+      this.pos.x - halfwidth / 2,
+      this.pos.y - halfheight / 2,
       halfwidth,
       halfheight,
     );
     this.rb = new Quad(
       p,
-      this.pos.x + halfx,
-      this.pos.y - halfy,
+      this.pos.x + halfwidth / 2,
+      this.pos.y - halfheight / 2,
       halfwidth,
       halfheight,
     );
 
     this.lt = new Quad(
       p,
-      this.pos.x - halfx,
-      this.pos.y + halfy,
+      this.pos.x - halfwidth / 2,
+      this.pos.y + halfheight / 2,
       halfwidth,
       halfheight,
     );
     this.rt = new Quad(
       p,
-      this.pos.x + halfx,
-      this.pos.y + halfy,
+      this.pos.x + halfwidth / 2,
+      this.pos.y + halfheight / 2,
       halfwidth,
       halfheight,
     );
   }
-  search(x, y, p) {
-    this._search(this, x, y, p);
+  merge(p) {
+    this.lb = undefined;
+    this.lt = undefined;
+    this.rb = undefined;
+    this.rt = undefined;
+
+    this.draw(p);
+  }
+  search(p, x, y) {
+    return this._search(this, x, y, p);
   }
   isInside(x, y) {
     return (
@@ -107,14 +129,17 @@ class Quad {
     if (!node.lb) {
       if (node.isInside(x, y)) {
         node.draw(p, 0, 0, 100);
+        return true;
       }
+      return false;
       // check here
     } else {
-      node._search(node.lb, x, y, p);
-      node._search(node.rb, x, y, p);
-      node._search(node.lt, x, y, p);
-      node._search(node.rt, x, y, p);
-
+      return (
+        node._search(node.lb, x, y, p) ||
+        node._search(node.rb, x, y, p) ||
+        node._search(node.lt, x, y, p) ||
+        node._search(node.rt, x, y, p)
+      );
       // go deeper
     }
   }
@@ -122,27 +147,36 @@ class Quad {
 
 /** @param {p5} p */
 const sketch = (p) => {
+  let root;
+  let circles = [];
   p.setup = () => {
     p.createCanvas(clientWidth, clientHeight);
-  };
-
-  p.draw = () => {
-    let mp = p.createVector(p.mouseX, p.mouseY);
-    p.background(220);
-    let root = new Quad(
+    root = new Quad(
       p,
       clientWidth / 2,
       clientHeight / 2,
       clientWidth,
       clientHeight,
+      2,
     );
+    circles.push(new Unit(p, 125, 54, 10));
+    circles.push(new Unit(p, 30, 124, 50, 5));
+    circles.push(new Unit(p, 125, 54, 5, 50));
+    circles.push(new Unit(p, 30, 124, 20, 25));
+  };
+  p.draw = () => {
+    let mp = p.createVector(p.mouseX, p.mouseY);
+    p.background(220);
 
     root.split(p);
     root.lb.split(p);
     root.lb.lb.split(p);
-    root.lb.lb.split(p);
+    root.lb.merge(p);
     root.draw(p);
-    root.search(mp.x, mp.y, p);
+
+    for (let i of circles) {
+      i.move(p);
+    }
   };
 };
 

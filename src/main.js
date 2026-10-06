@@ -17,9 +17,19 @@ class Unit {
     this.dir = p.createVector(Math.random(), Math.random()).normalize();
   }
   move(p) {
-    this.pos.add(this.dir.mult(this.v));
+    this.pos.add(p5.Vector.mult(this.dir, this.v));
     p.fill(255, 0, 0);
     p.circle(this.pos.x, this.pos.y, this.r);
+    if (this.pos.x <= 0 || this.pos.x > clientWidth) {
+      this.bounce(-1, 0);
+    }
+    if (this.pos.y <= 0 || this.pos.y > clientHeight) {
+      this.bounce(0, -1);
+    }
+  }
+  bounce(x, y) {
+    this.dir.x *= x;
+    this.dir.y *= y;
   }
 }
 
@@ -159,10 +169,10 @@ const sketch = (p) => {
       clientHeight,
       2,
     );
-    circles.push(new Unit(p, 125, 54, 10));
+    circles.push(new Unit(p, 125, 54, 10, 7));
     circles.push(new Unit(p, 30, 124, 50, 5));
-    circles.push(new Unit(p, 125, 54, 5, 50));
-    circles.push(new Unit(p, 30, 124, 20, 25));
+    circles.push(new Unit(p, 125, 54, 5, 9));
+    circles.push(new Unit(p, 30, 124, 20, 8));
   };
   p.draw = () => {
     let mp = p.createVector(p.mouseX, p.mouseY);
@@ -174,6 +184,9 @@ const sketch = (p) => {
     root.lb.merge(p);
     root.draw(p);
 
+    for (let i of circles) {
+      root.search(p, i.pos.x, i.pos.y);
+    }
     for (let i of circles) {
       i.move(p);
     }

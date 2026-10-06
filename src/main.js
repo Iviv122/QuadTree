@@ -96,9 +96,9 @@ class Quad {
   }
   isInside(x, y) {
     return (
-      x > this.pos.x - this.width / 2 &&
+      x >= this.pos.x - this.width / 2 &&
       x < this.pos.x + this.width / 2 &&
-      y > this.pos.y - this.height / 2 &&
+      y >= this.pos.y - this.height / 2 &&
       y < this.pos.y + this.height / 2
     );
   }
@@ -110,10 +110,10 @@ class Quad {
       }
       // check here
     } else {
-      node._search(node.lb, x, y,p);
-      node._search(node.rb, x, y,p);
-      node._search(node.lt, x, y,p);
-      node._search(node.rt, x, y,p);
+      node._search(node.lb, x, y, p);
+      node._search(node.rb, x, y, p);
+      node._search(node.lt, x, y, p);
+      node._search(node.rt, x, y, p);
 
       // go deeper
     }
@@ -139,6 +139,8 @@ const sketch = (p) => {
 
     root.split(p);
     root.lb.split(p);
+    root.lb.lb.split(p);
+    root.lb.lb.split(p);
     root.draw(p);
     root.search(mp.x, mp.y, p);
   };

@@ -1,3 +1,4 @@
+import { Queue } from "./queue_linked_list";
 import "./style.css";
 import p5 from "p5";
 
@@ -99,9 +100,18 @@ class Quad {
     return this.val.size;
   }
   amount_subtree(): number {
-    let sum = this.amount();
-    for (let i = 0; i < this.nodes.length; i++) {
-      sum += this.nodes[i].amount_subtree();
+    const q = new Queue<Quad>();
+    let sum = 0;
+    q.enqueue(this);
+    while (!q.isEmpty()) {
+      const curr = q.peek();
+      q.dequeue();
+      if (curr === undefined) return sum;
+      sum += curr.amount();
+
+      for (let i of curr.nodes) {
+        q.enqueue(i);
+      }
     }
     return sum;
   }

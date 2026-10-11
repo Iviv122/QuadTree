@@ -100,7 +100,9 @@ class Quad {
   }
   amount_subtree(): number {
     let sum = this.amount();
-    this.nodes.forEach((node) => (sum += node.amount_subtree()));
+    for (let i = 0; i < this.nodes.length; i++) {
+      sum += this.nodes[i].amount_subtree();
+    }
     return sum;
   }
   amount_children(): number {
@@ -168,19 +170,19 @@ class Quad {
   merge() {
     if (this.nodes.length <= 0) return;
     if (this.amount_children() > this.threshold) return; // fix here
-    this.nodes.map((node) => {
-      for (let i of node.val) {
-        node.merge();
-        this.val.add(i);
+    for (let i = 0; i < this.nodes.length; i++) {
+      for (let j of this.nodes[i].val) {
+        this.nodes[i].merge();
+        this.val.add(j);
       }
-    });
+    }
     this.nodes = [];
   }
   remove(unit: Unit) {
     if (this.nodes.length > 0) {
-      this.nodes.map((node) => {
-        node.remove(unit);
-      });
+      for (let i of this.nodes) {
+        i.remove(unit);
+      }
       if (this.amount_subtree() <= this.threshold) {
         this.merge();
       }
@@ -206,9 +208,9 @@ class Quad {
   }
   collide() {
     if (this.child_count() > 0) {
-      this.nodes.map((i) => {
+      for (let i of this.nodes) {
         i.collide();
-      });
+      }
     }
     if (this.amount() <= 0) {
       return;
@@ -252,7 +254,7 @@ const sketch = (p: p5) => {
       20,
     );
     setTimeout(async () => {
-      for (let i = 0; i < 500; i++) {
+      for (let i = 0; i < 1000; i++) {
         circles.push(
           new Unit(
             p,

@@ -61,7 +61,6 @@ class Quad {
 
   nodes: Quad[] = [];
 
-  // TODO: implement borders for optimization (isInside)
   top_border: number;
   bottom_border: number;
   left_border: number;
@@ -117,14 +116,6 @@ class Quad {
     let sum = this.amount();
     for (let i = 0; i < this.nodes.length; i++) {
       sum += this.nodes[i].amount_subtree();
-    }
-    this.subtree_sum = sum;
-    return sum;
-  }
-  amount_children(): number {
-    let sum = 0;
-    for (let i = 0; i < this.nodes.length; i++) {
-      sum += this.nodes[i].amount();
     }
     this.subtree_sum = sum;
     return sum;
@@ -196,32 +187,20 @@ class Quad {
     this.nodes = [];
   }
   remove(unit: Unit): boolean {
-    if (this.subtree_sum === undefined) this.amount_subtree();
     if (this.val.has(unit)) {
       this.val.delete(unit);
-      // @ts-ignore
-      this.subtree_sum--;
       return true;
     }
     for (let i of this.nodes) {
       if (i.remove(unit)) {
-        // @ts-ignore
-        this.subtree_sum -= 1;
         return true;
       }
-    }
-
-    // @ts-ignore
-    if (this.subtree_sum <= this.threshold) {
-      this.merge();
     }
     return false;
   }
   // i will go insane lul
 
   insert(p: p5, unit: Unit): boolean {
-    if (this.subtree_sum === undefined) this.amount_subtree();
-
     for (const node of this.nodes) {
       if (node.isInside(unit.pos.x, unit.pos.y) && node.insert(p, unit)) {
         // @ts-ignore
@@ -288,33 +267,35 @@ const sketch = (p: p5) => {
       2,
       20,
     );
-    setTimeout(async () => {
-      for (let i = 0; i < 5000; i++) {
-        circles.push(
-          new Unit(
-            p,
-            clientWidth / 2 +
-              Math.random() * (clientWidth - 100) -
-              (clientWidth - 100) / 2,
-            clientHeight / 2 +
-              Math.random() * (clientHeight - 100) -
-              (clientHeight - 100) / 2,
-            Math.random() * 5 + 5,
-            Math.random() * 2 + 1,
-          ),
-        );
-        //await new Promise((r) => setTimeout(r, 100));
-      }
-    }, 0);
+    for (let i = 0; i < 5000; i++) {
+      circles.push(
+        new Unit(
+          p,
+          clientWidth / 2 +
+            Math.random() * (clientWidth - 100) -
+            (clientWidth - 100) / 2,
+          clientHeight / 2 +
+            Math.random() * (clientHeight - 100) -
+            (clientHeight - 100) / 2,
+          Math.random() * 5 + 5,
+          Math.random() * 2 + 1,
+        ),
+      );
+      //await new Promise((r) => setTimeout(r, 100));
+    }
   };
   p.draw = () => {
     //let mp = p.createVector(p.mouseX, p.mouseY);
     p.background(220);
-    for (let i of owner.entries()) {
-      i[1].remove(i[0]);
-    }
-    root.amount_subtree();
-    root.merge();
+    root = new Quad(
+      p,
+      clientWidth / 2,
+      clientHeight / 2,
+      clientWidth,
+      clientHeight,
+      5,
+      40,
+    );
     for (let i of circles) {
       i.move();
       root.insert(p, i);

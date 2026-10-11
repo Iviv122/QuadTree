@@ -177,12 +177,9 @@ class Quad {
         ),
       ),
     );
-    const units = Array.from(this.val.values());
-
     this.subtree_sum = this.val.size;
-    this.val.clear();
 
-    for (let unit of units) {
+    for (let unit of this.val) {
       for (let node of this.nodes) {
         if (node.isInside(unit.pos.x, unit.pos.y)) {
           node.insert(p, unit);
@@ -190,6 +187,7 @@ class Quad {
         }
       }
     }
+    this.val.clear();
   }
   merge() {
     if (this.nodes.length <= 0) return;
@@ -205,15 +203,10 @@ class Quad {
     this.nodes = [];
   }
   remove(unit: Unit): boolean {
-    if (this.isInside(unit.pos.x, unit.pos.y)) {
-      for (const node of this.nodes) {
-        node.remove(unit);
-      }
-      return false;
-    }
     if (this.subtree_sum === undefined) this.amount_subtree();
-    let isRemoved = false;
 
+    // ok someone isn't inside me!
+    let isRemoved = false;
     if (this.nodes.length > 0) {
       for (let i of this.nodes) {
         if (!isRemoved) {
@@ -241,38 +234,50 @@ class Quad {
   }
   // i will go insane lul
   insert(p: p5, unit: Unit): boolean {
+    /*
     if (!this.isInside(unit.pos.x, unit.pos.y)) {
+      // i don't have it i will remove it
+      // i don't care remove will handle it
       this.remove(unit);
       return false;
     }
+    */
     if (this.subtree_sum === undefined) this.amount_subtree();
     let isInserted = false;
 
     for (const node of this.nodes) {
+      // ask children
       if (node.isInside(unit.pos.x, unit.pos.y)) {
+        // is inside of my child?
         if (!isInserted) {
-          isInserted = node.insert(p, unit);
+          isInserted = node.insert(p, unit); // had my child handled it succesfully?
         } else {
-          break;
+          break; // i had inserted this unit already, please no copies :begbegbeg:
         }
       }
     }
     if (isInserted) {
+      // my child had inserted, i don't care about the rest
+      // my size go vroom vroom
       // @ts-ignore
       this.subtree_sum += 1;
       return true;
     }
+    // i have kids (not in irl lul)
+    // why i didn't care to give them
+    // it means false res
     if (this.child_count() > 0) {
       return false;
     }
-
     if (!this.val.has(unit)) {
+      // in theory i add only once >->
       this.val.add(unit);
       // @ts-ignore
       this.subtree_sum += 1;
       isInserted = true;
     }
     if (this.amount() > this.threshold) {
+      // i have too much
       this.split(p);
     }
 
@@ -322,11 +327,11 @@ const sketch = (p: p5) => {
       clientHeight / 2,
       clientWidth,
       clientHeight,
-      4,
-      6,
+      2,
+      20,
     );
     setTimeout(async () => {
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 500; i++) {
         circles.push(
           new Unit(
             p,
@@ -349,6 +354,7 @@ const sketch = (p: p5) => {
     p.background(220);
     for (let i of circles) {
       i.move();
+      root.remove(i);
       root.insert(p, i);
     }
     root.collide();

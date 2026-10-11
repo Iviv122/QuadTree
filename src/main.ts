@@ -68,6 +68,10 @@ class Quad {
   nodes: Quad[] = [];
 
   // TODO: implement borders for optimization (isInside)
+  top_border: number;
+  bottom_border: number;
+  left_border: number;
+  right_border: number;
 
   subtree_sum?: number = undefined;
 
@@ -87,6 +91,11 @@ class Quad {
     this.threshold = threshold;
     this.max_depth = max_depth;
     this.depth = depth;
+
+    this.left_border = this.pos.x - this.width / 2;
+    this.right_border = this.pos.x + this.width / 2;
+    this.bottom_border = this.pos.y - this.height / 2;
+    this.top_border = this.pos.y + this.height / 2;
   }
 
   draw(p: p5, d = 0, r = true, c = undefined) {
@@ -169,8 +178,10 @@ class Quad {
       ),
     );
     const units = Array.from(this.val.values());
+
+    this.subtree_sum = this.val.size;
     this.val.clear();
-    this.subtree_sum = this.subtree_sum;
+
     for (let unit of units) {
       for (let node of this.nodes) {
         if (node.isInside(unit.pos.x, unit.pos.y)) {
@@ -185,9 +196,9 @@ class Quad {
     if (this.subtree_sum === undefined) this.amount_subtree();
     // @ts-ignore
     if (this.subtree_sum > this.threshold) return;
-    for (let i = 0; i < this.nodes.length; i++) {
-      for (let j of this.nodes[i].val) {
-        this.nodes[i].merge();
+    for (let i of this.nodes) {
+      for (let j of i.val) {
+        i.merge();
         this.val.add(j);
       }
     }
@@ -285,10 +296,10 @@ class Quad {
   }
   isInside(x: number, y: number) {
     return (
-      x >= this.pos.x - this.width / 2 &&
-      x < this.pos.x + this.width / 2 &&
-      y >= this.pos.y - this.height / 2 &&
-      y < this.pos.y + this.height / 2
+      x >= this.left_border &&
+      x < this.right_border &&
+      y >= this.bottom_border &&
+      y < this.top_border
     );
   }
   FindDepth(): number {
@@ -315,7 +326,7 @@ const sketch = (p: p5) => {
       6,
     );
     setTimeout(async () => {
-      for (let i = 0; i < 5000; i++) {
+      for (let i = 0; i < 50; i++) {
         circles.push(
           new Unit(
             p,
@@ -336,17 +347,16 @@ const sketch = (p: p5) => {
   p.draw = () => {
     //let mp = p.createVector(p.mouseX, p.mouseY);
     p.background(220);
-    root.amount_subtree();
     for (let i of circles) {
       i.move();
       root.insert(p, i);
     }
+    root.collide();
 
     root.draw(p);
     for (let i of circles) {
       i.draw(p);
     }
-    root.collide();
     console.log(root.subtree_sum);
   };
 };

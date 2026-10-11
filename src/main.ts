@@ -98,6 +98,18 @@ class Quad {
   amount(): number {
     return this.val.size;
   }
+  amount_subtree(): number {
+    let sum = this.amount();
+    this.nodes.forEach((node) => (sum += node.amount_subtree()));
+    return sum;
+  }
+  amount_children(): number {
+    let sum = 0;
+    for (let i = 0; i < this.nodes.length; i++) {
+      sum += this.nodes[i].amount();
+    }
+    return sum;
+  }
 
   child_count(): number {
     return this.nodes.length;
@@ -109,114 +121,94 @@ class Quad {
 
     const halfwidth = this.width / 2;
     const halfheight = this.height / 2;
-    this.nodes.push(
-      new Quad(
-        p,
-        this.pos.x - halfwidth / 2,
-        this.pos.y - halfheight / 2,
-        halfwidth,
-        halfheight,
-        this.threshold,
-        this.max_depth,
-        this.depth + 1,
+    const poses = [
+      {
+        x: this.pos.x - halfwidth / 2,
+        y: this.pos.y - halfheight / 2,
+      },
+      {
+        x: this.pos.x + halfwidth / 2,
+        y: this.pos.y - halfheight / 2,
+      },
+      {
+        x: this.pos.x - halfwidth / 2,
+        y: this.pos.y + halfheight / 2,
+      },
+      {
+        x: this.pos.x + halfwidth / 2,
+        y: this.pos.y + halfheight / 2,
+      },
+    ];
+    poses.forEach((i) =>
+      this.nodes.push(
+        new Quad(
+          p,
+          i.x,
+          i.y,
+          halfwidth,
+          halfheight,
+          this.threshold,
+          this.max_depth,
+          this.depth + 1,
+        ),
       ),
     );
-    this.nodes.push(
-      new Quad(
-        p,
-        this.pos.x + halfwidth / 2,
-        this.pos.y - halfheight / 2,
-        halfwidth,
-        halfheight,
-        this.threshold,
-        this.max_depth,
-        this.depth + 1,
-      ),
-    );
-
-    this.nodes.push(
-      new Quad(
-        p,
-        this.pos.x - halfwidth / 2,
-        this.pos.y + halfheight / 2,
-        halfwidth,
-        halfheight,
-        this.threshold,
-        this.max_depth,
-        this.depth + 1,
-      ),
-    );
-    this.nodes.push(
-      new Quad(
-        p,
-        this.pos.x + halfwidth / 2,
-        this.pos.y + halfheight / 2,
-        halfwidth,
-        halfheight,
-        this.threshold,
-        this.max_depth,
-        this.depth + 1,
-      ),
-    );
-    const chils = Array.of(...this.val.values());
-
+    const units = Array.from(this.val.values());
     this.val.clear();
 
-    for (let j of this.nodes) {
-      for (let i of chils) {
-        if (j.isInside(i.pos.x, i.pos.y)) {
-          j.insert(p, i);
-          continue;
+    for (let unit of units) {
+      for (let node of this.nodes) {
+        if (node.isInside(unit.pos.x, unit.pos.y)) {
+          node.insert(p, unit);
+          break; // we inserted node, ig xd
         }
       }
     }
   }
   merge() {
+    if (this.nodes.length <= 0) return;
+    if (this.amount_children() > this.threshold) return; // fix here
     this.nodes.map((node) => {
       for (let i of node.val) {
+        node.merge();
         this.val.add(i);
       }
     });
-    console.log("Removed");
     this.nodes = [];
   }
   remove(unit: Unit) {
-    if (!this.isInside(unit.pos.x, unit.pos.y)) {
-      return;
-    }
     if (this.nodes.length > 0) {
       this.nodes.map((node) => {
         node.remove(unit);
       });
-      const sum = this.nodes.reduce((acc, i) => acc + i.amount(), 0);
-      if (sum < this.threshold) {
+      if (this.amount_subtree() <= this.threshold) {
         this.merge();
       }
-    } else {
-      this.val.delete(unit);
+      return;
     }
+    this.val.delete(unit);
+    return;
   }
   // i will go insane lul
   insert(p: p5, unit: Unit) {
-    if (!this.isInside(unit.pos.x, unit.pos.y)) return false;
+    this.remove(unit);
+    if (!this.isInside(unit.pos.x, unit.pos.y)) return;
     for (const node of this.nodes) {
       if (node.isInside(unit.pos.x, unit.pos.y)) {
         node.insert(p, unit);
-        return true;
+        return;
       }
     }
     this.val.add(unit);
-    if (this.amount() >= this.threshold) {
+    if (this.amount() > this.threshold) {
       this.split(p);
-      return true;
     }
   }
   collide() {
-    if (this.nodes.length > 0) {
+    if (this.child_count() > 0) {
       this.nodes.map((i) => {
         i.collide();
       });
-      return;
     }
     if (this.amount() <= 0) {
       return;
@@ -236,6 +228,17 @@ class Quad {
       y < this.pos.y + this.height / 2
     );
   }
+  FindDepth(): number {
+    if (this.child_count() > 0) {
+      let res = 0;
+      for (let i of this.nodes) {
+        res = Math.max(res, i.depth);
+      }
+      return res;
+    } else {
+      return 1;
+    }
+  }
 }
 
 const sketch = (p: p5) => {
@@ -250,15 +253,15 @@ const sketch = (p: p5) => {
       clientWidth,
       clientHeight,
       4,
-      1,
+      5,
     );
     setTimeout(async () => {
-      for (let i = 0; i < 5000; i++) {
+      for (let i = 0; i < 500; i++) {
         circles.push(
           new Unit(
             p,
-            clientWidth / 2 + Math.random() * 500 - 250,
-            clientHeight / 2 + Math.random() * 500 - 250,
+            clientWidth / 2 + Math.random() * clientWidth - clientWidth / 2,
+            clientHeight / 2 + Math.random() * clientHeight - clientHeight / 2,
             Math.random() * 5 + 5,
             Math.random() * 2 + 1,
           ),
@@ -267,20 +270,24 @@ const sketch = (p: p5) => {
       }
     }, 0);
   };
+  let max_depth = 0;
   p.draw = () => {
     //let mp = p.createVector(p.mouseX, p.mouseY);
     p.background(220);
+
     for (let i of circles) {
       i.move();
+      root.insert(p, i);
     }
+
     root.draw(p);
     for (let i of circles) {
-      root.remove(i);
-      root.insert(p, i);
       i.draw(p);
     }
     root.collide();
-    console.log(root.amount());
+    console.log("overall " + circles.length + " root:" + root.amount());
+    max_depth = Math.max(max_depth, root.FindDepth());
+    console.log("depth: " + max_depth);
   };
 };
 

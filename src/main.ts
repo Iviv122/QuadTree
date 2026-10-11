@@ -21,23 +21,18 @@ class Unit {
   move() {
     this.pos.add(p5.Vector.mult(this.dir, this.v));
     if (this.pos.x <= this.r || this.pos.x > clientWidth - this.r) {
-      this.bounce(-1, 0);
+      this.dir.x *= -1;
     }
     if (this.pos.y <= this.r || this.pos.y > clientHeight - this.r) {
-      this.bounce(0, -1);
+      this.dir.y *= -1;
     }
   }
   draw(p: p5) {
     p.fill(255, 0, 0);
     p.circle(this.pos.x, this.pos.y, this.r);
   }
-  // TODO: Make normal based bounce or dot/cross product bounce
-  bounce(x: number, y: number) {
-    this.dir.x *= x;
-    this.dir.y *= y;
-  }
 
-  collide(unit: Unit) {10
+  collide(unit: Unit) {
     const dx = unit.pos.x - this.pos.x;
     const dy = unit.pos.y - this.pos.y;
 
@@ -47,9 +42,8 @@ class Unit {
     // Not colliding
     if (distanceSq > minDistance * minDistance) return;
 
-
-    this.dir.mult(unit.dir.mult(1)).normalize()
-    unit.dir.mult(this.dir.mult(1)).normalize()
+    this.dir.rotate(Math.random() * 720 - 360);
+    unit.dir.rotate(Math.random() * 720 - 360);
   }
 }
 
@@ -58,8 +52,9 @@ class Quad {
   pos;
   width;
   height;
-
+  max_depth = 4;
   threshold;
+  depth = 0;
   val = new Set<Unit>();
 
   nodes: Quad[] = [];
@@ -71,11 +66,15 @@ class Quad {
     width: number,
     height: number,
     threshold: number,
+    max_depth: number = 4,
+    depth = 0,
   ) {
     this.pos = p.createVector(x, y);
     this.width = width;
     this.height = height;
     this.threshold = threshold;
+    this.max_depth = max_depth;
+    this.depth = depth;
   }
 
   draw(p: p5, d = 0, r = true, c = undefined) {
@@ -100,8 +99,13 @@ class Quad {
     return this.val.size;
   }
 
+  child_count(): number {
+    return this.nodes.length;
+  }
+
   split(p: p5) {
-    if (this.nodes.length > 0) return;
+    if (this.child_count() > 0) return;
+    if (this.depth >= this.max_depth) return;
 
     const halfwidth = this.width / 2;
     const halfheight = this.height / 2;
@@ -113,6 +117,8 @@ class Quad {
         halfwidth,
         halfheight,
         this.threshold,
+        this.max_depth,
+        this.depth + 1,
       ),
     );
     this.nodes.push(
@@ -123,6 +129,8 @@ class Quad {
         halfwidth,
         halfheight,
         this.threshold,
+        this.max_depth,
+        this.depth + 1,
       ),
     );
 
@@ -134,6 +142,8 @@ class Quad {
         halfwidth,
         halfheight,
         this.threshold,
+        this.max_depth,
+        this.depth + 1,
       ),
     );
     this.nodes.push(
@@ -144,12 +154,22 @@ class Quad {
         halfwidth,
         halfheight,
         this.threshold,
+        this.max_depth,
+        this.depth + 1,
       ),
     );
-    for (let i of this.val) {
-      this.insert(p, i);
-    }
+    const chils = Array.of(...this.val.values());
+
     this.val.clear();
+
+    for (let j of this.nodes) {
+      for (let i of chils) {
+        if (j.isInside(i.pos.x, i.pos.y)) {
+          j.insert(p, i);
+          continue;
+        }
+      }
+    }
   }
   merge() {
     this.nodes.map((node) => {
@@ -157,6 +177,7 @@ class Quad {
         this.val.add(i);
       }
     });
+    console.log("Removed");
     this.nodes = [];
   }
   remove(unit: Unit) {
@@ -175,19 +196,19 @@ class Quad {
       this.val.delete(unit);
     }
   }
+  // i will go insane lul
   insert(p: p5, unit: Unit) {
-    if (!this.isInside(unit.pos.x, unit.pos.y)) return;
-    if (this.nodes.length > 0) {
-      for (const node of this.nodes) {
-        if (node.insert(p, unit)) {
-          return true;
-        }
+    if (!this.isInside(unit.pos.x, unit.pos.y)) return false;
+    for (const node of this.nodes) {
+      if (node.isInside(unit.pos.x, unit.pos.y)) {
+        node.insert(p, unit);
+        return true;
       }
     }
     this.val.add(unit);
-
     if (this.amount() >= this.threshold) {
       this.split(p);
+      return true;
     }
   }
   collide() {
@@ -195,6 +216,7 @@ class Quad {
       this.nodes.map((i) => {
         i.collide();
       });
+      return;
     }
     if (this.amount() <= 0) {
       return;
@@ -228,18 +250,22 @@ const sketch = (p: p5) => {
       clientWidth,
       clientHeight,
       4,
+      1,
     );
-    for (let i = 0; i < 100; i++) {
-      circles.push(
-        new Unit(
-          p,
-          clientWidth / 2 + Math.random() * 500 - 250,
-          clientHeight / 2 + Math.random() * 500 - 250,
-          Math.random() * 5 + 5,
-          2,
-        ),
-      );
-    }
+    setTimeout(async () => {
+      for (let i = 0; i < 5000; i++) {
+        circles.push(
+          new Unit(
+            p,
+            clientWidth / 2 + Math.random() * 500 - 250,
+            clientHeight / 2 + Math.random() * 500 - 250,
+            Math.random() * 5 + 5,
+            Math.random() * 2 + 1,
+          ),
+        );
+        //await new Promise((r) => setTimeout(r, 100));
+      }
+    }, 0);
   };
   p.draw = () => {
     //let mp = p.createVector(p.mouseX, p.mouseY);
@@ -254,6 +280,7 @@ const sketch = (p: p5) => {
       i.draw(p);
     }
     root.collide();
+    console.log(root.amount());
   };
 };
 

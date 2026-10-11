@@ -256,14 +256,20 @@ class Quad {
 const amountSlider = document.getElementById("amount") as HTMLInputElement;
 const amountLabel = document.getElementById("amount-value")!;
 
-const mindepthSlider = document.getElementById("mindepth") as HTMLInputElement;
-const mindepthLabel = document.getElementById("mindepth-value")!;
+const maxdepthSlider = document.getElementById("mindepth") as HTMLInputElement;
+const maxdepthLabel = document.getElementById("mindepth-value")!;
+
+const thresholdSlider = document.getElementById(
+  "threshold",
+) as HTMLInputElement;
+const thresholdLabel = document.getElementById("threshold-value")!;
 
 let circles: Unit[] = [];
 
 const sketch = (p: p5) => {
   let root: Quad;
   let maxdepth: number = 40;
+  let threshold: number = 7;
 
   p.setup = () => {
     function createUnit(x?: number, y?: number): Unit {
@@ -300,11 +306,17 @@ const sketch = (p: p5) => {
     });
     setAmount(Number(amountSlider.value));
 
-    mindepthSlider.addEventListener("input", () => {
-      maxdepth = Number(mindepthSlider.value);
-      mindepthLabel.innerText = maxdepth.toString();
+    maxdepthSlider.addEventListener("input", () => {
+      maxdepth = Number(maxdepthSlider.value);
+      maxdepthLabel.innerText = maxdepth.toString();
     });
-    mindepthLabel.innerText = maxdepth.toString();
+    maxdepthLabel.innerText = maxdepth.toString();
+
+    thresholdSlider.addEventListener("input", () => {
+      threshold = Number(thresholdSlider.value);
+      thresholdLabel.innerText = threshold.toString();
+    });
+    thresholdLabel.innerText = threshold.toString();
 
     addEventListener("click", (e) => {
       circles.push(createUnit(e.clientX, e.clientY));
@@ -320,7 +332,7 @@ const sketch = (p: p5) => {
       clientHeight / 2,
       clientWidth,
       clientHeight,
-      5,
+      threshold,
       maxdepth,
     );
     for (let i of circles) {

@@ -1,4 +1,5 @@
-import { Queue } from "./queue_linked_list";
+// parówka a nie kod :P
+
 import "./style.css";
 import p5 from "p5";
 
@@ -21,11 +22,17 @@ class Unit {
   }
   move() {
     this.pos.add(p5.Vector.mult(this.dir, this.v));
+    let bord = false;
     if (this.pos.x <= this.r || this.pos.x > clientWidth - this.r) {
       this.dir.x *= -1;
+      bord = true;
     }
     if (this.pos.y <= this.r || this.pos.y > clientHeight - this.r) {
       this.dir.y *= -1;
+      bord = true;
+    }
+    if (bord) {
+      this.move();
     }
   }
   draw(p: p5) {
@@ -59,6 +66,8 @@ class Quad {
   val = new Set<Unit>();
 
   nodes: Quad[] = [];
+
+  // TODO: implement borders for optimization (isInside)
 
   subtree_sum?: number = undefined;
 
@@ -106,26 +115,9 @@ class Quad {
     for (let i = 0; i < this.nodes.length; i++) {
       sum += this.nodes[i].amount_subtree();
     }
+    this.subtree_sum = sum;
     return sum;
   }
-  /*
-  amount_subtree(): number {
-    const q = new Queue<Quad>();
-    let sum = 0;
-    q.enqueue(this);
-    while (!q.isEmpty()) {
-      const curr = q.peek();
-      q.dequeue();
-      if (curr === undefined) return sum;
-      sum += curr.amount();
-
-      for (let i of curr.nodes) {
-        q.enqueue(i);
-      }
-    }
-    return sum;
-  }
-  */
   amount_children(): number {
     let sum = 0;
     for (let i = 0; i < this.nodes.length; i++) {
@@ -134,7 +126,6 @@ class Quad {
     this.subtree_sum = sum;
     return sum;
   }
-
   child_count(): number {
     return this.nodes.length;
   }
@@ -179,7 +170,7 @@ class Quad {
     );
     const units = Array.from(this.val.values());
     this.val.clear();
-
+    this.subtree_sum = this.subtree_sum;
     for (let unit of units) {
       for (let node of this.nodes) {
         if (node.isInside(unit.pos.x, unit.pos.y)) {
@@ -191,7 +182,9 @@ class Quad {
   }
   merge() {
     if (this.nodes.length <= 0) return;
-    if (this.amount_children() > this.threshold) return; // fix here
+    if (this.subtree_sum === undefined) this.amount_subtree();
+    // @ts-ignore
+    if (this.subtree_sum > this.threshold) return;
     for (let i = 0; i < this.nodes.length; i++) {
       for (let j of this.nodes[i].val) {
         this.nodes[i].merge();
@@ -200,44 +193,79 @@ class Quad {
     }
     this.nodes = [];
   }
-  remove(unit: Unit) {
-    if (this.isInside(unit.pos.x, unit.pos.y)) return;
+  remove(unit: Unit): boolean {
+    if (this.isInside(unit.pos.x, unit.pos.y)) {
+      for (const node of this.nodes) {
+        node.remove(unit);
+      }
+      return false;
+    }
     if (this.subtree_sum === undefined) this.amount_subtree();
-    // @ts-ignore
-    this.subtree_sum += 1;
+    let isRemoved = false;
+
     if (this.nodes.length > 0) {
       for (let i of this.nodes) {
-        i.remove(unit);
+        if (!isRemoved) {
+          isRemoved = i.remove(unit);
+        } else {
+          i.remove(unit);
+        }
       }
-      if (this.subtree_sum === undefined) {
-        this.amount_subtree();
-      }
+      if (this.subtree_sum === undefined) this.amount_subtree();
+
       // @ts-ignore
-      if (this.subtree_sum <= this.threshold) {
-        this.merge();
-      }
-      return;
+      if (isRemoved) this.subtree_sum -= 1;
+
+      // @ts-ignore
+      if (this.subtree_sum <= this.threshold) this.merge();
+
+      return isRemoved;
     }
-    this.val.delete(unit);
-    return;
+    if (this.val.delete(unit)) {
+      // @ts-ignore
+      this.subtree_sum -= 1;
+      return true;
+    }
+    return isRemoved;
   }
   // i will go insane lul
-  insert(p: p5, unit: Unit) {
-    this.remove(unit);
-    if (!this.isInside(unit.pos.x, unit.pos.y)) return;
+  insert(p: p5, unit: Unit): boolean {
+    if (!this.isInside(unit.pos.x, unit.pos.y)) {
+      this.remove(unit);
+      return false;
+    }
     if (this.subtree_sum === undefined) this.amount_subtree();
-    // @ts-ignore
-    this.subtree_sum += 1;
+    let isInserted = false;
+
     for (const node of this.nodes) {
       if (node.isInside(unit.pos.x, unit.pos.y)) {
-        node.insert(p, unit);
-        return;
+        if (!isInserted) {
+          isInserted = node.insert(p, unit);
+        } else {
+          break;
+        }
       }
     }
-    this.val.add(unit);
+    if (isInserted) {
+      // @ts-ignore
+      this.subtree_sum += 1;
+      return true;
+    }
+    if (this.child_count() > 0) {
+      return false;
+    }
+
+    if (!this.val.has(unit)) {
+      this.val.add(unit);
+      // @ts-ignore
+      this.subtree_sum += 1;
+      isInserted = true;
+    }
     if (this.amount() > this.threshold) {
       this.split(p);
     }
+
+    return isInserted;
   }
   collide() {
     if (this.child_count() > 0) {
@@ -284,15 +312,19 @@ const sketch = (p: p5) => {
       clientWidth,
       clientHeight,
       4,
-      20,
+      6,
     );
     setTimeout(async () => {
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 5000; i++) {
         circles.push(
           new Unit(
             p,
-            clientWidth / 2 + Math.random() * clientWidth - clientWidth / 2,
-            clientHeight / 2 + Math.random() * clientHeight - clientHeight / 2,
+            clientWidth / 2 +
+              Math.random() * (clientWidth - 100) -
+              (clientWidth - 100) / 2,
+            clientHeight / 2 +
+              Math.random() * (clientHeight - 100) -
+              (clientHeight - 100) / 2,
             Math.random() * 5 + 5,
             Math.random() * 2 + 1,
           ),
@@ -301,11 +333,10 @@ const sketch = (p: p5) => {
       }
     }, 0);
   };
-  let max_depth = 0;
   p.draw = () => {
     //let mp = p.createVector(p.mouseX, p.mouseY);
     p.background(220);
-
+    root.amount_subtree();
     for (let i of circles) {
       i.move();
       root.insert(p, i);
@@ -316,9 +347,7 @@ const sketch = (p: p5) => {
       i.draw(p);
     }
     root.collide();
-    console.log("overall " + circles.length + " root:" + root.amount());
-    max_depth = Math.max(max_depth, root.FindDepth());
-    console.log("depth: " + max_depth);
+    console.log(root.subtree_sum);
   };
 };
 

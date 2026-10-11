@@ -60,6 +60,8 @@ class Quad {
 
   nodes: Quad[] = [];
 
+  subtree_sum?: number = undefined;
+
   constructor(
     p: p5,
     x: number,
@@ -100,6 +102,14 @@ class Quad {
     return this.val.size;
   }
   amount_subtree(): number {
+    let sum = this.amount();
+    for (let i = 0; i < this.nodes.length; i++) {
+      sum += this.nodes[i].amount_subtree();
+    }
+    return sum;
+  }
+  /*
+  amount_subtree(): number {
     const q = new Queue<Quad>();
     let sum = 0;
     q.enqueue(this);
@@ -115,11 +125,13 @@ class Quad {
     }
     return sum;
   }
+  */
   amount_children(): number {
     let sum = 0;
     for (let i = 0; i < this.nodes.length; i++) {
       sum += this.nodes[i].amount();
     }
+    this.subtree_sum = sum;
     return sum;
   }
 
@@ -189,11 +201,19 @@ class Quad {
     this.nodes = [];
   }
   remove(unit: Unit) {
+    if (this.isInside(unit.pos.x, unit.pos.y)) return;
+    if (this.subtree_sum === undefined) this.amount_subtree();
+    // @ts-ignore
+    this.subtree_sum += 1;
     if (this.nodes.length > 0) {
       for (let i of this.nodes) {
         i.remove(unit);
       }
-      if (this.amount_subtree() <= this.threshold) {
+      if (this.subtree_sum === undefined) {
+        this.amount_subtree();
+      }
+      // @ts-ignore
+      if (this.subtree_sum <= this.threshold) {
         this.merge();
       }
       return;
@@ -205,6 +225,9 @@ class Quad {
   insert(p: p5, unit: Unit) {
     this.remove(unit);
     if (!this.isInside(unit.pos.x, unit.pos.y)) return;
+    if (this.subtree_sum === undefined) this.amount_subtree();
+    // @ts-ignore
+    this.subtree_sum += 1;
     for (const node of this.nodes) {
       if (node.isInside(unit.pos.x, unit.pos.y)) {
         node.insert(p, unit);

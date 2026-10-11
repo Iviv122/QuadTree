@@ -256,16 +256,17 @@ class Quad {
 const amountSlider = document.getElementById("amount") as HTMLInputElement;
 
 const amountLabel = document.getElementById("amount-value")!;
+let circles: Unit[] = [];
 
 const sketch = (p: p5) => {
   let root: Quad;
-  let circles: Unit[] = [];
+
   p.setup = () => {
-    function createUnit(): Unit {
+    function createUnit(x?: number, y?: number): Unit {
       return new Unit(
         p,
-        Math.random() * (clientWidth - 100) + 50,
-        Math.random() * (clientHeight - 100) + 50,
+        x ? x : Math.random() * (clientWidth - 100) + 50,
+        y ? y : Math.random() * (clientHeight - 100) + 50,
         Math.random() * 5 + 5,
         Math.random() * 2 + 1,
       );
@@ -297,6 +298,10 @@ const sketch = (p: p5) => {
     });
 
     setAmount(Number(amountSlider.value));
+    addEventListener("click", (e) => {
+      circles.push(createUnit(e.clientX, e.clientY));
+      console.log(e.clientX + " " + e.clientY);
+    });
   };
   p.draw = () => {
     //let mp = p.createVector(p.mouseX, p.mouseY);

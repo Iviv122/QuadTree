@@ -254,12 +254,16 @@ class Quad {
 }
 
 const amountSlider = document.getElementById("amount") as HTMLInputElement;
-
 const amountLabel = document.getElementById("amount-value")!;
+
+const mindepthSlider = document.getElementById("mindepth") as HTMLInputElement;
+const mindepthLabel = document.getElementById("mindepth-value")!;
+
 let circles: Unit[] = [];
 
 const sketch = (p: p5) => {
   let root: Quad;
+  let maxdepth: number = 40;
 
   p.setup = () => {
     function createUnit(x?: number, y?: number): Unit {
@@ -277,9 +281,7 @@ const sketch = (p: p5) => {
         circles.push(createUnit());
       }
 
-      if (circles.length > amount) {
-        circles.length = amount;
-      }
+      circles.length = amount;
 
       amountLabel.textContent = String(amount);
       p.createCanvas(clientWidth, clientHeight);
@@ -296,8 +298,14 @@ const sketch = (p: p5) => {
     amountSlider.addEventListener("input", () => {
       setAmount(Number(amountSlider.value));
     });
-
     setAmount(Number(amountSlider.value));
+
+    mindepthSlider.addEventListener("input", () => {
+      maxdepth = Number(mindepthSlider.value);
+      mindepthLabel.innerText = maxdepth.toString();
+    });
+    mindepthLabel.innerText = maxdepth.toString();
+
     addEventListener("click", (e) => {
       circles.push(createUnit(e.clientX, e.clientY));
       console.log(e.clientX + " " + e.clientY);
@@ -313,7 +321,7 @@ const sketch = (p: p5) => {
       clientWidth,
       clientHeight,
       5,
-      40,
+      maxdepth,
     );
     for (let i of circles) {
       i.move();

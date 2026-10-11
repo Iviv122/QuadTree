@@ -253,36 +253,50 @@ class Quad {
   }
 }
 
+const amountSlider = document.getElementById("amount") as HTMLInputElement;
+
+const amountLabel = document.getElementById("amount-value")!;
+
 const sketch = (p: p5) => {
   let root: Quad;
   let circles: Unit[] = [];
   p.setup = () => {
-    p.createCanvas(clientWidth, clientHeight);
-    root = new Quad(
-      p,
-      clientWidth / 2,
-      clientHeight / 2,
-      clientWidth,
-      clientHeight,
-      2,
-      20,
-    );
-    for (let i = 0; i < 5000; i++) {
-      circles.push(
-        new Unit(
-          p,
-          clientWidth / 2 +
-            Math.random() * (clientWidth - 100) -
-            (clientWidth - 100) / 2,
-          clientHeight / 2 +
-            Math.random() * (clientHeight - 100) -
-            (clientHeight - 100) / 2,
-          Math.random() * 5 + 5,
-          Math.random() * 2 + 1,
-        ),
+    function createUnit(): Unit {
+      return new Unit(
+        p,
+        Math.random() * (clientWidth - 100) + 50,
+        Math.random() * (clientHeight - 100) + 50,
+        Math.random() * 5 + 5,
+        Math.random() * 2 + 1,
       );
-      //await new Promise((r) => setTimeout(r, 100));
     }
+
+    function setAmount(amount: number) {
+      while (circles.length < amount) {
+        circles.push(createUnit());
+      }
+
+      if (circles.length > amount) {
+        circles.length = amount;
+      }
+
+      amountLabel.textContent = String(amount);
+      p.createCanvas(clientWidth, clientHeight);
+      root = new Quad(
+        p,
+        clientWidth / 2,
+        clientHeight / 2,
+        clientWidth,
+        clientHeight,
+        2,
+        20,
+      );
+    }
+    amountSlider.addEventListener("input", () => {
+      setAmount(Number(amountSlider.value));
+    });
+
+    setAmount(Number(amountSlider.value));
   };
   p.draw = () => {
     //let mp = p.createVector(p.mouseX, p.mouseY);

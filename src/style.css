@@ -295,3 +295,7 @@ code {
         border-right-color: var(--border);
     }
 }
+#controls {
+    position: absolute;
+    color: var(--text-h);
+}

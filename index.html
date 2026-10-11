@@ -7,6 +7,19 @@
         <title>quadtree</title>
     </head>
     <body>
+        <div id="controls">
+            <label for="amount">
+                Units: <span id="amount-value">5000</span>
+            </label>
+            <input
+                id="amount"
+                type="range"
+                min="100"
+                max="10000"
+                step="100"
+                value="5000"
+            />
+        </div>
         <main id="main"></main>
         <script type="module" src="node_modules/p5"></script>
         <script type="module" src="/src/main.ts"></script>

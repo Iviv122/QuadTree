@@ -297,5 +297,7 @@ code {
 }
 #controls {
     position: absolute;
-    color: var(--text-h);
+    color: black;
+    background-color: rgba(256,256,256,0.5);
+    padding: 5px;
 }

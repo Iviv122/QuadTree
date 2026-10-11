@@ -229,15 +229,11 @@ class Quad {
     );
   }
   FindDepth(): number {
-    if (this.child_count() > 0) {
-      let res = 0;
-      for (let i of this.nodes) {
-        res = Math.max(res, i.depth);
-      }
-      return res;
-    } else {
-      return 1;
+    let res = this.depth;
+    for (let i of this.nodes) {
+      res = Math.max(res, i.FindDepth());
     }
+    return res;
   }
 }
 
@@ -253,7 +249,7 @@ const sketch = (p: p5) => {
       clientWidth,
       clientHeight,
       4,
-      5,
+      20,
     );
     setTimeout(async () => {
       for (let i = 0; i < 500; i++) {

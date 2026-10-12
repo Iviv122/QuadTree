@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>quadtree</title>
+      <script type="module" crossorigin src="/assets/index-CDleftMT.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-Cftu6gdA.css">
+    </head>
+    <body>
+        <div id="controls">
+            <label for="amount">
+                Units: <span id="amount-value">5000</span>
+            </label>
+            <input
+                id="amount"
+                type="range"
+                min="100"
+                max="10000"
+                step="100"
+                value="5000"
+            />
+            <label for="mindepth">
+                MinDepth: <span id="mindepth-value">5000</span>
+            </label>
+            <input
+                id="mindepth"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="40"
+            />
+            <label for="threshold">
+                Divide treshold: <span id="threshold-value">5000</span>
+            </label>
+            <input
+                id="threshold"
+                type="range"
+                min="2"
+                max="100"
+                step="1"
+                value="7"
+            />
+        </div>
+        <main id="main"></main>
+    </body>
+</html>

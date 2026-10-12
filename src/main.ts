@@ -41,11 +41,24 @@ class Unit {
     const minDistance = this.r + unit.r;
     const distanceSq = dx * dx + dy * dy;
 
-    // Not colliding
+    // Not colliding, not friendo :(
     if (distanceSq > minDistance * minDistance) return;
+    this.dir.rotate(Math.random() * 1000);
+    unit.dir.rotate(Math.random() * 1000);
+    /*
+    const distance = Math.sqrt(distanceSq);
 
-    this.dir.rotate(Math.random() * 720 - 360);
-    unit.dir.rotate(Math.random() * 720 - 360);
+    const nx = distance > 0 ? dx / distance : 1;
+    const ny = distance > 0 ? dy / distance : 0;
+
+    this.dir.x = this.dir.x - 2 * (this.dir.x * nx + this.dir.y * ny) * nx;
+    this.dir.y = this.dir.y - 2 * (this.dir.x * nx + this.dir.y * ny) * ny;
+    this.pos.x -= nx;
+    this.pos.y -= ny;
+
+    unit.dir.x = unit.dir.x - 2 * (unit.dir.x * nx + unit.dir.y * ny) * nx;
+    unit.dir.y = unit.dir.y - 2 * (unit.dir.x * nx + unit.dir.y * ny) * ny;
+     */
   }
 }
 const owner = new Map<Unit, Quad>();

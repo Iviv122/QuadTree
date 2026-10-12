@@ -1,6 +1,8 @@
 # QuadTree
 Web implementation of many to many collision using Quadtree data structure
 
+Warning, this app is unrecommended for people with epilepsia or motion sickness
+
 ## Features
 - minimal depth change
 - change amount of particles/balls
@@ -21,4 +23,5 @@ pnpm install
 pnpm run dev
 ```
 
-# Demo video
+
+
